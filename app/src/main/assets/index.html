@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="bn" data-theme="dark" data-accent="cyan">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Goriber AI</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <button id="menuToggleBtn" class="icon-btn" aria-label="Menu" onclick="toggleDrawer()">☰</button>
+        <div>
+          <div class="brand-title">Goriber AI</div>
+          <div id="topbarSubtitle" class="brand-sub">Home Dashboard</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span id="netBadge" class="status-pill online">Online</span>
+        <button class="emergency-btn" onclick="emergencyStop()" title="Emergency Stop">STOP</button>
+      </div>
+    </header>
+
+    <!-- Slide Navigation Drawer (All 22+ Pages) -->
+    <div id="drawerBackdrop" class="drawer-backdrop hidden" onclick="toggleDrawer(false)"></div>
+    <aside id="navDrawer" class="nav-drawer" aria-label="Navigation">
+      <div class="drawer-header">
+        <div>
+          <div id="drawerUserName" class="drawer-user">User</div>
+          <div id="drawerUserEmail" class="drawer-email">Signed in</div>
+          <span id="drawerPlanBadge" class="plan-chip">FREE</span>
+        </div>
+        <button class="icon-btn" onclick="toggleDrawer(false)">✕</button>
+      </div>
+      <nav id="drawerLinks" class="drawer-links"></nav>
+      <div class="drawer-footer">
+        <button class="btn btn-outline btn-sm" onclick="nativeSignOut()">Sign Out</button>
+      </div>
+    </aside>
+
+    <!-- Main Dynamic Page Container -->
+    <main id="pageContainer" class="page-container"></main>
+
+    <!-- Minimal Bottom Bar -->
+    <nav class="bottom-nav">
+      <button class="bnav-item active" data-page="home" onclick="navigateTo('home')">
+        <span class="bnav-icon">⌂</span><span>Home</span>
+      </button>
+      <button class="bnav-item" data-page="ai_assistant" onclick="navigateTo('ai_assistant')">
+        <span class="bnav-icon">✦</span><span>AI Chat</span>
+      </button>
+      <button class="bnav-item" data-page="phone_control" onclick="navigateTo('phone_control')">
+        <span class="bnav-icon">⊞</span><span>100 Controls</span>
+      </button>
+      <button class="bnav-item" data-page="permission_center" onclick="navigateTo('permission_center')">
+        <span class="bnav-icon">🛡</span><span>Permissions</span>
+      </button>
+      <button class="bnav-item" data-page="app_settings" onclick="navigateTo('app_settings')">
+        <span class="bnav-icon">⚙</span><span>Settings</span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Confirmation Modal (Mandatory before important/dangerous actions) -->
+  <div id="confirmModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-badge" id="confirmRiskBadge">ACTION CONFIRMATION</div>
+      <h3 id="confirmTitle">Confirm Action</h3>
+      <p id="confirmDesc" class="muted"></p>
+      <div class="confirm-meta">
+        <div><span>AI / Source:</span> <strong id="confirmSource">Manual</strong></div>
+        <div><span>Permission:</span> <strong id="confirmPerm">None</strong></div>
+        <div><span>Status:</span> <strong id="confirmPermStatus">Ready</strong></div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeConfirmModal(false)">Cancel</button>
+        <button id="confirmProceedBtn" class="btn btn-primary" onclick="closeConfirmModal(true)">Confirm &amp; Execute</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Permission Rationale Modal -->
+  <div id="permModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-badge">PERMISSION REQUEST</div>
+      <h3 id="permModalTitle">Permission Required</h3>
+      <p id="permModalRationale" class="muted"></p>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closePermModal(false)">Not Now</button>
+        <button class="btn btn-primary" onclick="closePermModal(true)">Allow in Android</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Banner -->
+  <div id="toastBanner" class="toast hidden"></div>
+
+  <script src="ai-manager.js"></script>
+  <script src="api-manager.js"></script>
+  <script src="permission-manager.js"></script>
+  <script src="floating-controller.js"></script>
+  <script src="automation.js"></script>
+  <script src="premium-manager.js"></script>
+  <script src="admin-panel.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>

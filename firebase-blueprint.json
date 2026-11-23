@@ -1,0 +1,240 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User account profile, theme preferences, subscription lifecycle, moderation status, and usage counters.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "Firebase Auth UID of the user." },
+        "displayName": { "type": "string", "description": "Display name." },
+        "email": { "type": "string", "description": "Verified email address." },
+        "planTier": { "type": "string", "enum": ["free", "pro", "enterprise"] },
+        "premiumStatus": { "type": "string", "enum": ["free", "active", "suspended", "expired", "cancelled"] },
+        "packageId": { "type": "string" },
+        "packageName": { "type": "string" },
+        "subscriptionId": { "type": "string" },
+        "lifetimePlan": { "type": "boolean" },
+        "giftedByAdmin": { "type": "boolean" },
+        "purchasedAtMs": { "type": "integer" },
+        "expiresAtMs": { "type": "integer" },
+        "banned": { "type": "boolean" },
+        "banReason": { "type": "string" },
+        "themeMode": { "type": "string", "enum": ["dark", "light", "amoled", "gold_royal"] },
+        "accentColor": { "type": "string", "enum": ["cyan", "indigo", "emerald", "amber", "rose", "gold"] },
+        "totalCommands": { "type": "integer" },
+        "totalAiQueries": { "type": "integer" },
+        "lastAction": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp on creation." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Server timestamp on update." }
+      },
+      "required": [
+        "userId", "displayName", "email", "planTier", "premiumStatus", "packageId",
+        "packageName", "subscriptionId", "lifetimePlan", "giftedByAdmin", "purchasedAtMs",
+        "expiresAtMs", "banned", "banReason", "themeMode", "accentColor", "totalCommands",
+        "totalAiQueries", "lastAction", "createdAt", "updatedAt"
+      ]
+    },
+    "PremiumPackage": {
+      "title": "PremiumPackage",
+      "description": "Admin-configurable subscription packages (7d, 30d, 90d, 180d, 365d, Lifetime) with BDT price and Google Play Product ID.",
+      "type": "object",
+      "properties": {
+        "packageId": { "type": "string" },
+        "name": { "type": "string" },
+        "nameBn": { "type": "string" },
+        "description": { "type": "string" },
+        "durationDays": { "type": "integer" },
+        "lifetimePlan": { "type": "boolean" },
+        "priceBdt": { "type": "integer" },
+        "playProductId": { "type": "string" },
+        "tier": { "type": "string", "enum": ["pro", "enterprise"] },
+        "featuresSummary": { "type": "string" },
+        "active": { "type": "boolean" },
+        "sortOrder": { "type": "integer" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "packageId", "name", "nameBn", "description", "durationDays", "lifetimePlan",
+        "priceBdt", "playProductId", "tier", "featuresSummary", "active", "sortOrder",
+        "createdAt", "updatedAt"
+      ]
+    },
+    "PremiumAppConfig": {
+      "title": "PremiumAppConfig",
+      "description": "Global feature gating flags for the 15 premium features, free limits, and payment settings.",
+      "type": "object",
+      "properties": {
+        "freeDailyAiLimit": { "type": "integer" },
+        "merchantBkashNumber": { "type": "string" },
+        "merchantNagadNumber": { "type": "string" },
+        "merchantRocketNumber": { "type": "string" },
+        "webhookVerifyUrl": { "type": "string" },
+        "promoBanner": { "type": "string" },
+        "featureFlags": { "type": "object" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "freeDailyAiLimit", "merchantBkashNumber", "merchantNagadNumber",
+        "merchantRocketNumber", "webhookVerifyUrl", "promoBanner", "featureFlags", "updatedAt"
+      ]
+    },
+    "ActivityLog": {
+      "title": "ActivityLog",
+      "description": "Audit log of executed phone control commands and AI actions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "controlId": { "type": "integer" },
+        "actionName": { "type": "string" },
+        "category": { "type": "string" },
+        "aiProvider": { "type": "string" },
+        "permissionStatus": { "type": "string" },
+        "userConfirmed": { "type": "boolean" },
+        "success": { "type": "boolean" },
+        "errorDetails": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Server timestamp." }
+      },
+      "required": ["userId", "controlId", "actionName", "category", "aiProvider", "permissionStatus", "userConfirmed", "success", "errorDetails", "createdAt"]
+    },
+    "AutomationRule": {
+      "title": "AutomationRule",
+      "description": "User-configured scheduled task or system alert automation.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "triggerType": { "type": "string", "enum": ["daily", "scheduled", "battery_low", "storage_low", "network_change", "app_launch", "custom"] },
+        "triggerValue": { "type": "string" },
+        "actionCommand": { "type": "string" },
+        "enabled": { "type": "boolean" },
+        "lastRunLabel": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "title", "triggerType", "triggerValue", "actionCommand", "enabled", "lastRunLabel", "createdAt", "updatedAt"]
+    },
+    "CustomAssistant": {
+      "title": "CustomAssistant",
+      "description": "Premium user-created custom AI assistant persona and instructions.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "roleTitle": { "type": "string" },
+        "systemPrompt": { "type": "string" },
+        "providerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "roleTitle", "systemPrompt", "providerId", "createdAt", "updatedAt"]
+    },
+    "PaymentRequest": {
+      "title": "PaymentRequest",
+      "description": "bKash, Nagad, Rocket, and Google Play subscription payment & refund tracking record.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "planId": { "type": "string" },
+        "packageName": { "type": "string" },
+        "durationDays": { "type": "integer" },
+        "lifetimePlan": { "type": "boolean" },
+        "method": { "type": "string", "enum": ["bkash", "nagad", "rocket", "play_store"] },
+        "senderNumber": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "playPurchaseToken": { "type": "string" },
+        "amountBdt": { "type": "integer" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected", "refund_requested", "refunded"] },
+        "refundReason": { "type": "string" },
+        "adminNote": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "userEmail", "planId", "packageName", "durationDays", "lifetimePlan",
+        "method", "senderNumber", "transactionId", "playPurchaseToken", "amountBdt",
+        "status", "refundReason", "adminNote", "createdAt", "updatedAt"
+      ]
+    },
+    "UserTelemetry": {
+      "title": "UserTelemetry",
+      "description": "Aggregated user activity, subscription, and moderation snapshot for admin monitoring.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "displayName": { "type": "string" },
+        "planTier": { "type": "string", "enum": ["free", "pro", "enterprise"] },
+        "premiumStatus": { "type": "string", "enum": ["free", "active", "suspended", "expired", "cancelled"] },
+        "packageName": { "type": "string" },
+        "lifetimePlan": { "type": "boolean" },
+        "expiresAtMs": { "type": "integer" },
+        "banned": { "type": "boolean" },
+        "commandsCount": { "type": "integer" },
+        "aiQueriesCount": { "type": "integer" },
+        "lastCommand": { "type": "string" },
+        "deviceModel": { "type": "string" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": [
+        "userId", "userEmail", "displayName", "planTier", "premiumStatus",
+        "packageName", "lifetimePlan", "expiresAtMs", "banned", "commandsCount",
+        "aiQueriesCount", "lastCommand", "deviceModel", "updatedAt"
+      ]
+    },
+    "AdminAuditLog": {
+      "title": "AdminAuditLog",
+      "description": "Immutable audit log of all Admin premium, package, payment, refund, and user ban actions.",
+      "type": "object",
+      "properties": {
+        "adminUid": { "type": "string" },
+        "adminEmail": { "type": "string" },
+        "actionType": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "targetLabel": { "type": "string" },
+        "details": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminUid", "adminEmail", "actionType", "targetUserId", "targetLabel", "details", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Per-user profile, theme, moderation, and subscription settings."
+    },
+    "/users/{userId}/activity_logs/{logId}": {
+      "schema": { "$ref": "#/entities/ActivityLog" },
+      "description": "Per-user command and AI execution history."
+    },
+    "/users/{userId}/automations/{ruleId}": {
+      "schema": { "$ref": "#/entities/AutomationRule" },
+      "description": "Per-user scheduled tasks and system alert rules."
+    },
+    "/users/{userId}/custom_assistants/{assistantId}": {
+      "schema": { "$ref": "#/entities/CustomAssistant" },
+      "description": "Per-user custom AI assistant personas (Premium)."
+    },
+    "/premium_packages/{packageId}": {
+      "schema": { "$ref": "#/entities/PremiumPackage" },
+      "description": "Dynamic subscription packages managed by Admin."
+    },
+    "/app_config/premium_features": {
+      "schema": { "$ref": "#/entities/PremiumAppConfig" },
+      "description": "Global feature toggles and payment configuration managed by Admin."
+    },
+    "/payment_requests/{requestId}": {
+      "schema": { "$ref": "#/entities/PaymentRequest" },
+      "description": "bKash, Nagad, Rocket, and Play Store subscription payment & refund records."
+    },
+    "/user_telemetry/{userId}": {
+      "schema": { "$ref": "#/entities/UserTelemetry" },
+      "description": "Per-user telemetry and moderation summary readable by the owner and verified admin."
+    },
+    "/admin_audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AdminAuditLog" },
+      "description": "Immutable audit trail for Admin control room actions."
+    }
+  }
+}

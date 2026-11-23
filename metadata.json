@@ -1,0 +1,6 @@
+{
+  "name": "Goriber AI",
+  "description": "AI-powered Android phone controller with 100 native controls, 4 AI providers, floating overlay, automation, subscriptions, analytics, and admin panel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

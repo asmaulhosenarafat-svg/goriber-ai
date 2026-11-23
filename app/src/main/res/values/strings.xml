@@ -1,0 +1,12 @@
+<resources>
+    <string name="app_name">Goriber AI</string>
+    <string name="app_tagline">Intelligent Phone Control &amp; Automation</string>
+    <string name="sign_in_with_google">Sign in with Google</string>
+    <string name="sign_out">Sign out</string>
+    <string name="floating_channel_name">Floating Controller</string>
+    <string name="floating_channel_desc">Keeps the AI Floating Controller active over apps</string>
+    <string name="alerts_channel_name">Automation &amp; System Alerts</string>
+    <string name="alerts_channel_desc">Battery, storage, network, and scheduled automation alerts</string>
+    <string name="accessibility_service_desc">Executes user-confirmed navigation and system actions such as Back, Home, Recents, Notifications, Quick Settings, and Power Menu.</string>
+    <string name="notification_service_desc">Reads active notification count for user-requested notification dashboard summaries.</string>
+</resources>

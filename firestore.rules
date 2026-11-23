@@ -1,0 +1,489 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- Global Hardened Primitives ---
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (
+        (request.auth.token.email_verified == true && request.auth.token.email == 'arafatislam989834@gmail.com') ||
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isUserNotBanned(userId) {
+      return !exists(/databases/$(database)/documents/users/$(userId)) ||
+             get(/databases/$(database)/documents/users/$(userId)).data.banned != true;
+    }
+
+    // --- Validation Helpers ---
+    function isValidUserProfile(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.email is string && data.email.size() <= 120 &&
+             data.planTier in ['free', 'pro', 'enterprise'] &&
+             data.premiumStatus in ['free', 'active', 'suspended', 'expired', 'cancelled'] &&
+             data.packageId is string && data.packageId.size() <= 64 &&
+             data.packageName is string && data.packageName.size() <= 100 &&
+             data.subscriptionId is string && data.subscriptionId.size() <= 80 &&
+             data.lifetimePlan is bool &&
+             data.giftedByAdmin is bool &&
+             data.purchasedAtMs is int && data.purchasedAtMs >= 0 &&
+             data.expiresAtMs is int && data.expiresAtMs >= 0 &&
+             data.banned is bool &&
+             data.banReason is string && data.banReason.size() <= 240 &&
+             data.themeMode in ['dark', 'light', 'amoled', 'gold_royal'] &&
+             data.accentColor in ['cyan', 'indigo', 'emerald', 'amber', 'rose', 'gold'] &&
+             data.totalCommands is int && data.totalCommands >= 0 &&
+             data.totalAiQueries is int && data.totalAiQueries >= 0 &&
+             data.lastAction is string && data.lastAction.size() <= 160 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPremiumPackage(data) {
+      return data.packageId is string && data.packageId.size() >= 1 && data.packageId.size() <= 64 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 80 &&
+             data.nameBn is string && data.nameBn.size() <= 80 &&
+             data.description is string && data.description.size() <= 300 &&
+             data.durationDays is int && data.durationDays >= 0 && data.durationDays <= 36500 &&
+             data.lifetimePlan is bool &&
+             data.priceBdt is int && data.priceBdt >= 1 && data.priceBdt <= 500000 &&
+             data.playProductId is string && data.playProductId.size() <= 100 &&
+             data.tier in ['pro', 'enterprise'] &&
+             data.featuresSummary is string && data.featuresSummary.size() <= 500 &&
+             data.active is bool &&
+             data.sortOrder is int && data.sortOrder >= 0 && data.sortOrder <= 999 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPremiumAppConfig(data) {
+      return data.freeDailyAiLimit is int && data.freeDailyAiLimit >= 1 && data.freeDailyAiLimit <= 1000 &&
+             data.merchantBkashNumber is string && data.merchantBkashNumber.size() <= 30 &&
+             data.merchantNagadNumber is string && data.merchantNagadNumber.size() <= 30 &&
+             data.merchantRocketNumber is string && data.merchantRocketNumber.size() <= 30 &&
+             data.webhookVerifyUrl is string && data.webhookVerifyUrl.size() <= 300 &&
+             data.promoBanner is string && data.promoBanner.size() <= 200 &&
+             data.featureFlags is map &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidActivityLog(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.controlId is int && data.controlId >= 0 && data.controlId <= 200 &&
+             data.actionName is string && data.actionName.size() >= 1 && data.actionName.size() <= 120 &&
+             data.category is string && data.category.size() >= 1 && data.category.size() <= 50 &&
+             data.aiProvider is string && data.aiProvider.size() >= 1 && data.aiProvider.size() <= 50 &&
+             data.permissionStatus is string && data.permissionStatus.size() >= 1 && data.permissionStatus.size() <= 40 &&
+             data.userConfirmed is bool &&
+             data.success is bool &&
+             data.errorDetails is string && data.errorDetails.size() <= 300 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    function isValidAutomationRule(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.title is string && data.title.size() >= 1 && data.title.size() <= 100 &&
+             data.triggerType in ['daily', 'scheduled', 'battery_low', 'storage_low', 'network_change', 'app_launch', 'custom'] &&
+             data.triggerValue is string && data.triggerValue.size() <= 80 &&
+             data.actionCommand is string && data.actionCommand.size() >= 1 && data.actionCommand.size() <= 200 &&
+             data.enabled is bool &&
+             data.lastRunLabel is string && data.lastRunLabel.size() <= 80 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidCustomAssistant(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.name is string && data.name.size() >= 1 && data.name.size() <= 60 &&
+             data.roleTitle is string && data.roleTitle.size() <= 80 &&
+             data.systemPrompt is string && data.systemPrompt.size() >= 1 && data.systemPrompt.size() <= 1200 &&
+             data.providerId in ['gemini', 'chatgpt', 'claude', 'deepseek'] &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidPaymentRequest(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() >= 1 && data.userEmail.size() <= 120 &&
+             data.planId is string && data.planId.size() >= 1 && data.planId.size() <= 64 &&
+             data.packageName is string && data.packageName.size() >= 1 && data.packageName.size() <= 100 &&
+             data.durationDays is int && data.durationDays >= 0 && data.durationDays <= 36500 &&
+             data.lifetimePlan is bool &&
+             data.method in ['bkash', 'nagad', 'rocket', 'play_store'] &&
+             data.senderNumber is string && data.senderNumber.size() >= 4 && data.senderNumber.size() <= 64 &&
+             data.transactionId is string && data.transactionId.size() >= 4 && data.transactionId.size() <= 80 &&
+             data.playPurchaseToken is string && data.playPurchaseToken.size() <= 400 &&
+             data.amountBdt is int && data.amountBdt >= 0 && data.amountBdt <= 500000 &&
+             data.status in ['pending', 'approved', 'rejected', 'refund_requested', 'refunded'] &&
+             data.refundReason is string && data.refundReason.size() <= 240 &&
+             data.adminNote is string && data.adminNote.size() <= 240 &&
+             data.createdAt is timestamp && data.createdAt <= request.time &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidUserTelemetry(data) {
+      return data.userId is string && data.userId.size() >= 1 && data.userId.size() <= 128 &&
+             data.userEmail is string && data.userEmail.size() <= 120 &&
+             data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+             data.planTier in ['free', 'pro', 'enterprise'] &&
+             data.premiumStatus in ['free', 'active', 'suspended', 'expired', 'cancelled'] &&
+             data.packageName is string && data.packageName.size() <= 100 &&
+             data.lifetimePlan is bool &&
+             data.expiresAtMs is int && data.expiresAtMs >= 0 &&
+             data.banned is bool &&
+             data.commandsCount is int && data.commandsCount >= 0 &&
+             data.aiQueriesCount is int && data.aiQueriesCount >= 0 &&
+             data.lastCommand is string && data.lastCommand.size() <= 160 &&
+             data.deviceModel is string && data.deviceModel.size() <= 80 &&
+             data.updatedAt is timestamp && data.updatedAt <= request.time;
+    }
+
+    function isValidAdminAuditLog(data) {
+      return data.adminUid is string && data.adminUid == request.auth.uid &&
+             data.adminEmail is string && data.adminEmail.size() >= 1 && data.adminEmail.size() <= 120 &&
+             data.actionType is string && data.actionType.size() >= 1 && data.actionType.size() <= 50 &&
+             data.targetUserId is string && data.targetUserId.size() <= 128 &&
+             data.targetLabel is string && data.targetLabel.size() <= 120 &&
+             data.details is string && data.details.size() <= 400 &&
+             data.createdAt is timestamp && data.createdAt <= request.time;
+    }
+
+    // --- Admin Registry (read-only for self) ---
+    match /admins/{uid} {
+      allow get: if isSignedIn() && request.auth.uid == uid;
+      allow list, write: if false;
+    }
+
+    // --- Global Premium Packages ---
+    match /premium_packages/{packageId} {
+      allow get, list: if isSignedIn();
+
+      allow create: if isValidId(packageId) &&
+                       isAdmin() &&
+                       incoming().packageId == packageId &&
+                       incoming().keys().hasAll([
+                         'packageId', 'name', 'nameBn', 'description', 'durationDays',
+                         'lifetimePlan', 'priceBdt', 'playProductId', 'tier',
+                         'featuresSummary', 'active', 'sortOrder', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'packageId', 'name', 'nameBn', 'description', 'durationDays',
+                         'lifetimePlan', 'priceBdt', 'playProductId', 'tier',
+                         'featuresSummary', 'active', 'sortOrder', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPremiumPackage(incoming());
+
+      allow update: if isValidId(packageId) &&
+                       isAdmin() &&
+                       incoming().packageId == existing().packageId &&
+                       incoming().createdAt == existing().createdAt &&
+                       isValidPremiumPackage(incoming());
+
+      allow delete: if isValidId(packageId) && isAdmin();
+    }
+
+    // --- Global App Config & Feature Toggles ---
+    match /app_config/premium_features {
+      allow get: if isSignedIn();
+      allow list: if false;
+
+      allow create, update: if isAdmin() &&
+                               incoming().keys().hasAll([
+                                 'freeDailyAiLimit', 'merchantBkashNumber', 'merchantNagadNumber',
+                                 'merchantRocketNumber', 'webhookVerifyUrl', 'promoBanner',
+                                 'featureFlags', 'updatedAt'
+                               ]) &&
+                               incoming().keys().hasOnly([
+                                 'freeDailyAiLimit', 'merchantBkashNumber', 'merchantNagadNumber',
+                                 'merchantRocketNumber', 'webhookVerifyUrl', 'promoBanner',
+                                 'featureFlags', 'updatedAt'
+                               ]) &&
+                               isValidPremiumAppConfig(incoming());
+
+      allow delete: if false;
+    }
+
+    // --- User Profiles & Scoped Subcollections ---
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin();
+
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().planTier == 'free' &&
+                       incoming().premiumStatus == 'free' &&
+                       incoming().packageId == '' &&
+                       incoming().packageName == '' &&
+                       incoming().subscriptionId == '' &&
+                       incoming().lifetimePlan == false &&
+                       incoming().giftedByAdmin == false &&
+                       incoming().purchasedAtMs == 0 &&
+                       incoming().expiresAtMs == 0 &&
+                       incoming().banned == false &&
+                       incoming().banReason == '' &&
+                       incoming().keys().hasAll([
+                         'userId', 'displayName', 'email', 'planTier', 'premiumStatus', 'packageId',
+                         'packageName', 'subscriptionId', 'lifetimePlan', 'giftedByAdmin', 'purchasedAtMs',
+                         'expiresAtMs', 'banned', 'banReason', 'themeMode', 'accentColor', 'totalCommands',
+                         'totalAiQueries', 'lastAction', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'displayName', 'email', 'planTier', 'premiumStatus', 'packageId',
+                         'packageName', 'subscriptionId', 'lifetimePlan', 'giftedByAdmin', 'purchasedAtMs',
+                         'expiresAtMs', 'banned', 'banReason', 'themeMode', 'accentColor', 'totalCommands',
+                         'totalAiQueries', 'lastAction', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidUserProfile(incoming());
+
+      allow update: if isValidId(userId) &&
+                       isValidUserProfile(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt && (
+                         // Regular owner updates (only when not banned; cannot escalate privilege fields)
+                         (isOwner(userId) &&
+                          existing().banned == false &&
+                          incoming().planTier == existing().planTier &&
+                          incoming().premiumStatus == existing().premiumStatus &&
+                          incoming().packageId == existing().packageId &&
+                          incoming().packageName == existing().packageName &&
+                          incoming().subscriptionId == existing().subscriptionId &&
+                          incoming().lifetimePlan == existing().lifetimePlan &&
+                          incoming().giftedByAdmin == existing().giftedByAdmin &&
+                          incoming().purchasedAtMs == existing().purchasedAtMs &&
+                          incoming().expiresAtMs == existing().expiresAtMs &&
+                          incoming().banned == existing().banned &&
+                          incoming().banReason == existing().banReason &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'displayName', 'themeMode', 'accentColor', 'totalCommands',
+                            'totalAiQueries', 'lastAction', 'updatedAt'
+                          ])) ||
+                         // Automatic server-time expiration fallback for owner
+                         (isOwner(userId) &&
+                          existing().banned == false &&
+                          existing().premiumStatus == 'active' &&
+                          existing().lifetimePlan == false &&
+                          existing().expiresAtMs > 0 &&
+                          request.time.toMillis() >= existing().expiresAtMs &&
+                          incoming().premiumStatus == 'expired' &&
+                          incoming().planTier == 'free' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['premiumStatus', 'planTier', 'updatedAt'])) ||
+                         // Owner self-cancellation of active subscription
+                         (isOwner(userId) &&
+                          existing().banned == false &&
+                          existing().premiumStatus == 'active' &&
+                          incoming().premiumStatus == 'cancelled' &&
+                          incoming().planTier == 'free' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['premiumStatus', 'planTier', 'updatedAt'])) ||
+                         // Admin full subscription & moderation management
+                         (isAdmin() &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'planTier', 'premiumStatus', 'packageId', 'packageName', 'subscriptionId',
+                            'lifetimePlan', 'giftedByAdmin', 'purchasedAtMs', 'expiresAtMs',
+                            'banned', 'banReason', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if false;
+
+      match /activity_logs/{logId} {
+        allow get: if isValidId(userId) && isValidId(logId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+
+        allow create: if isValidId(userId) && isValidId(logId) &&
+                         isOwner(userId) &&
+                         isUserNotBanned(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'controlId', 'actionName', 'category', 'aiProvider', 'permissionStatus', 'userConfirmed', 'success', 'errorDetails', 'createdAt']) &&
+                         incoming().keys().hasOnly(['userId', 'controlId', 'actionName', 'category', 'aiProvider', 'permissionStatus', 'userConfirmed', 'success', 'errorDetails', 'createdAt']) &&
+                         isValidActivityLog(incoming());
+
+        allow update: if false;
+        allow delete: if isValidId(userId) && isValidId(logId) && isOwner(userId);
+      }
+
+      match /automations/{ruleId} {
+        allow get: if isValidId(userId) && isValidId(ruleId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+
+        allow create: if isValidId(userId) && isValidId(ruleId) &&
+                         isOwner(userId) &&
+                         isUserNotBanned(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'title', 'triggerType', 'triggerValue', 'actionCommand', 'enabled', 'lastRunLabel', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'title', 'triggerType', 'triggerValue', 'actionCommand', 'enabled', 'lastRunLabel', 'createdAt', 'updatedAt']) &&
+                         isValidAutomationRule(incoming());
+
+        allow update: if isValidId(userId) && isValidId(ruleId) &&
+                         isOwner(userId) &&
+                         isUserNotBanned(userId) &&
+                         isValidAutomationRule(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['title', 'triggerType', 'triggerValue', 'actionCommand', 'enabled', 'lastRunLabel', 'updatedAt']);
+
+        allow delete: if isValidId(userId) && isValidId(ruleId) && isOwner(userId);
+      }
+
+      match /custom_assistants/{assistantId} {
+        allow get: if isValidId(userId) && isValidId(assistantId) && (isOwner(userId) || isAdmin());
+        allow list: if isValidId(userId) && (isOwner(userId) || isAdmin());
+
+        allow create: if isValidId(userId) && isValidId(assistantId) &&
+                         isOwner(userId) &&
+                         isUserNotBanned(userId) &&
+                         incoming().userId == request.auth.uid &&
+                         incoming().keys().hasAll(['userId', 'name', 'roleTitle', 'systemPrompt', 'providerId', 'createdAt', 'updatedAt']) &&
+                         incoming().keys().hasOnly(['userId', 'name', 'roleTitle', 'systemPrompt', 'providerId', 'createdAt', 'updatedAt']) &&
+                         isValidCustomAssistant(incoming());
+
+        allow update: if isValidId(userId) && isValidId(assistantId) &&
+                         isOwner(userId) &&
+                         isUserNotBanned(userId) &&
+                         isValidCustomAssistant(incoming()) &&
+                         incoming().userId == existing().userId &&
+                         incoming().createdAt == existing().createdAt &&
+                         incoming().diff(existing()).affectedKeys().hasOnly(['name', 'roleTitle', 'systemPrompt', 'providerId', 'updatedAt']);
+
+        allow delete: if isValidId(userId) && isValidId(assistantId) && isOwner(userId);
+      }
+    }
+
+    // --- Payment Requests (bKash, Nagad, Rocket, Play Store) ---
+    match /payment_requests/{requestId} {
+      allow get: if isValidId(requestId) && (isAdmin() || (isSignedIn() && existing().userId == request.auth.uid));
+      allow list: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+
+      allow create: if isValidId(requestId) &&
+                       isSignedIn() &&
+                       isUserNotBanned(request.auth.uid) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().status == 'pending' &&
+                       incoming().refundReason == '' &&
+                       incoming().adminNote == '' &&
+                       incoming().keys().hasAll([
+                         'userId', 'userEmail', 'planId', 'packageName', 'durationDays',
+                         'lifetimePlan', 'method', 'senderNumber', 'transactionId',
+                         'playPurchaseToken', 'amountBdt', 'status', 'refundReason',
+                         'adminNote', 'createdAt', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'userEmail', 'planId', 'packageName', 'durationDays',
+                         'lifetimePlan', 'method', 'senderNumber', 'transactionId',
+                         'playPurchaseToken', 'amountBdt', 'status', 'refundReason',
+                         'adminNote', 'createdAt', 'updatedAt'
+                       ]) &&
+                       isValidPaymentRequest(incoming());
+
+      allow update: if isValidId(requestId) &&
+                       isValidPaymentRequest(incoming()) &&
+                       incoming().userId == existing().userId &&
+                       incoming().createdAt == existing().createdAt && (
+                         (isAdmin() &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'adminNote', 'updatedAt'])) ||
+                         (isSignedIn() &&
+                          existing().userId == request.auth.uid &&
+                          isUserNotBanned(request.auth.uid) &&
+                          existing().status == 'approved' &&
+                          incoming().status == 'refund_requested' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['status', 'refundReason', 'updatedAt']))
+                       );
+
+      allow delete: if false;
+    }
+
+    // --- User Telemetry (Admin Live Monitoring + Owner Sync) ---
+    match /user_telemetry/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin() || (isSignedIn() && existing().userId == request.auth.uid);
+
+      allow create: if isValidId(userId) &&
+                       isOwner(userId) &&
+                       incoming().userId == request.auth.uid &&
+                       incoming().planTier == 'free' &&
+                       incoming().premiumStatus == 'free' &&
+                       incoming().lifetimePlan == false &&
+                       incoming().expiresAtMs == 0 &&
+                       incoming().banned == false &&
+                       incoming().keys().hasAll([
+                         'userId', 'userEmail', 'displayName', 'planTier', 'premiumStatus',
+                         'packageName', 'lifetimePlan', 'expiresAtMs', 'banned', 'commandsCount',
+                         'aiQueriesCount', 'lastCommand', 'deviceModel', 'updatedAt'
+                       ]) &&
+                       incoming().keys().hasOnly([
+                         'userId', 'userEmail', 'displayName', 'planTier', 'premiumStatus',
+                         'packageName', 'lifetimePlan', 'expiresAtMs', 'banned', 'commandsCount',
+                         'aiQueriesCount', 'lastCommand', 'deviceModel', 'updatedAt'
+                       ]) &&
+                       isValidUserTelemetry(incoming());
+
+      allow update: if isValidId(userId) &&
+                       isValidUserTelemetry(incoming()) &&
+                       incoming().userId == existing().userId && (
+                         (isOwner(userId) &&
+                          existing().banned == false &&
+                          incoming().planTier == existing().planTier &&
+                          incoming().premiumStatus == existing().premiumStatus &&
+                          incoming().packageName == existing().packageName &&
+                          incoming().lifetimePlan == existing().lifetimePlan &&
+                          incoming().expiresAtMs == existing().expiresAtMs &&
+                          incoming().banned == existing().banned &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'displayName', 'commandsCount', 'aiQueriesCount', 'lastCommand', 'deviceModel', 'updatedAt'
+                          ])) ||
+                         (isOwner(userId) &&
+                          existing().banned == false &&
+                          existing().premiumStatus == 'active' &&
+                          incoming().premiumStatus in ['expired', 'cancelled'] &&
+                          incoming().planTier == 'free' &&
+                          incoming().diff(existing()).affectedKeys().hasOnly(['premiumStatus', 'planTier', 'updatedAt'])) ||
+                         (isAdmin() &&
+                          incoming().diff(existing()).affectedKeys().hasOnly([
+                            'planTier', 'premiumStatus', 'packageName', 'lifetimePlan',
+                            'expiresAtMs', 'banned', 'updatedAt'
+                          ]))
+                       );
+
+      allow delete: if false;
+    }
+
+    // --- Immutable Admin Audit Logs ---
+    match /admin_audit_logs/{logId} {
+      allow get, list: if isAdmin();
+
+      allow create: if isValidId(logId) &&
+                       isAdmin() &&
+                       incoming().keys().hasAll(['adminUid', 'adminEmail', 'actionType', 'targetUserId', 'targetLabel', 'details', 'createdAt']) &&
+                       incoming().keys().hasOnly(['adminUid', 'adminEmail', 'actionType', 'targetUserId', 'targetLabel', 'details', 'createdAt']) &&
+                       isValidAdminAuditLog(incoming());
+
+      allow update, delete: if false;
+    }
+  }
+}
